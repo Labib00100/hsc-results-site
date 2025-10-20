@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <title>HSC Results Viewer</title>
   <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
     table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #999; padding: 6px; text-align: left; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
   </style>
 </head>
 <body>
-  <h1>HSC Results</h1>
-  <input type="file" id="upload" accept=".csv">
-  <table id="table"></table>
+  <h2>📘 HSC Results 2025</h2>
+  <table id="resultsTable"></table>
+
   <script>
-    document.getElementById('upload').addEventListener('change', e => {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = evt => {
-        const rows = evt.target.result.split('\n').map(r => r.split(','));
-        const table = document.getElementById('table');
-        table.innerHTML = rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
-      };
-      reader.readAsText(file);
-    });
+    async function loadCSV() {
+      const response = await fetch('results.csv'); // must exist in repo root
+      const text = await response.text();
+      const rows = text.trim().split('\n').map(r => r.split(','));
+      const table = document.getElementById('resultsTable');
+
+      table.innerHTML = rows
+        .map((row, i) =>
+          `<tr>${row.map(cell => `<${i===0?'th':'td'}>${cell}</${i===0?'th':'td'}>`).join('')}</tr>`
+        )
+        .join('');
+    }
+    loadCSV();
   </script>
 </body>
 </html>
