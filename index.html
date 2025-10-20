@@ -1,35 +1,142 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HSC Results Viewer</title>
+  <title>HSC Result Dashboard 2025</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
-    th { background-color: #eee; }
+    :root {
+      --bg: #0d1117;
+      --text: #e6edf3;
+      --accent: #58a6ff;
+      --table-bg: #161b22;
+      --border: #30363d;
+      --input-bg: #21262d;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    #searchBox {
+      display: block;
+      margin: 10px auto 20px;
+      width: 90%;
+      max-width: 400px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      background: var(--table-bg);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      background-color: #1f242c;
+      color: var(--accent);
+    }
+
+    tr:hover {
+      background: rgba(88,166,255,0.1);
+    }
+
+    .rank {
+      font-weight: bold;
+      color: #ffa657;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      color: #8b949e;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <h2>📘 HSC Results 2025</h2>
-  <p>Auto-loaded from <b>results.csv</b></p>
-  <table id="resultsTable"></table>
+  <h1>📘 HSC Result Dashboard 2025</h1>
+  <input type="text" id="searchBox" placeholder="🔍 Search by roll or name..." onkeyup="filterTable()">
+
+  <table id="resultTable">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="footer">Developed by Thamid | Auto-ranked by GPA</div>
 
   <script>
     async function loadCSV() {
       try {
-        const response = await fetch('results.csv');
-        if (!response.ok) throw new Error('CSV not found.');
-        const text = await response.text();
-        const rows = text.trim().split('\n').map(r => r.split(','));
-        const table = document.getElementById('resultsTable');
-        table.innerHTML = rows.map((row, i) =>
-          `<tr>${row.map(cell => `<${i===0?'th':'td'}>${cell}</${i===0?'th':'td'}>`).join('')}</tr>`
-        ).join('');
+        const response = await fetch('result.csv');
+        if (!response.ok) throw new Error('CSV file not found');
+        const csvText = await response.text();
+        const rows = csvText.trim().split('\n').map(r => r.split(','));
+
+        const headers = rows[0];
+        const data = rows.slice(1).map(r => {
+          const obj = {};
+          headers.forEach((h, i) => obj[h.trim()] = r[i]?.trim());
+          obj["GPA"] = parseFloat(obj["GPA"]) || 0;
+          return obj;
+        });
+
+        // Sort by GPA descending
+        data.sort((a, b) => b.GPA - a.GPA);
+        data.forEach((row, i) => row["Rank"] = i + 1);
+
+        renderTable(headers, data);
+        window.resultData = data;
       } catch (err) {
-        document.body.innerHTML += `<p style="color:red;">Error loading CSV: ${err.message}</p>`;
+        document.body.innerHTML += `<p style="color:red;text-align:center;">⚠️ Error loading CSV: ${err.message}</p>`;
       }
     }
+
+    function renderTable(headers, data) {
+      const tableHead = document.querySelector("#resultTable thead");
+      const tableBody = document.querySelector("#resultTable tbody");
+
+      tableHead.innerHTML = `<tr><th>Rank</th>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+      tableBody.innerHTML = data.map(row => `
+        <tr>
+          <td class="rank">${row.Rank}</td>
+          ${headers.map(h => `<td>${row[h] || ""}</td>`).join('')}
+        </tr>`).join('');
+    }
+
+    function filterTable() {
+      const term = document.getElementById('searchBox').value.toLowerCase();
+      const rows = document.querySelectorAll('#resultTable tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(term) ? '' : 'none';
+      });
+    }
+
     loadCSV();
   </script>
 </body>
