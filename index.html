@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>HSC Results Viewer</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #999; padding: 6px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>HSC Results</h1>
+  <input type="file" id="upload" accept=".csv">
+  <table id="table"></table>
+  <script>
+    document.getElementById('upload').addEventListener('change', e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = evt => {
+        const rows = evt.target.result.split('\n').map(r => r.split(','));
+        const table = document.getElementById('table');
+        table.innerHTML = rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
+      };
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
