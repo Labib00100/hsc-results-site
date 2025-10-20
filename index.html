@@ -1,143 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>HSC Result Dashboard 2025</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    :root {
-      --bg: #0d1117;
-      --text: #e6edf3;
-      --accent: #58a6ff;
-      --table-bg: #161b22;
-      --border: #30363d;
-      --input-bg: #21262d;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSC Result Dashboard 2025</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --text: #e6edf3;
+    --accent: #58a6ff;
+    --table-bg: #161b22;
+    --border: #30363d;
+    --input-bg: #21262d;
+    --highlight: rgba(88,166,255,0.1);
+  }
 
-    body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 20px;
-    }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+  }
 
-    h1 {
-      text-align: center;
-      color: var(--accent);
-      margin-bottom: 10px;
-    }
+  h1 {
+    text-align: center;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
 
-    #searchBox {
-      display: block;
-      margin: 10px auto 20px;
-      width: 90%;
-      max-width: 400px;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--input-bg);
-      color: var(--text);
-      font-size: 16px;
-    }
+  #searchBox {
+    display: block;
+    margin: 10px auto 20px;
+    width: 90%;
+    max-width: 400px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 16px;
+  }
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 10px;
-      background: var(--table-bg);
-      border-radius: 8px;
-      overflow: hidden;
-    }
+  .table-container {
+    overflow-x: auto;
+    background: var(--table-bg);
+    border-radius: 8px;
+  }
 
-    th, td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-    }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    background: var(--table-bg);
+    border-radius: 8px;
+  }
 
-    th {
-      background-color: #1f242c;
-      color: var(--accent);
-    }
+  th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    white-space: nowrap;
+  }
 
-    tr:hover {
-      background: rgba(88,166,255,0.1);
-    }
+  th {
+    background-color: #1f242c;
+    color: var(--accent);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
 
-    .rank {
-      font-weight: bold;
-      color: #ffa657;
-    }
+  tr:hover {
+    background: var(--highlight);
+  }
 
-    .footer {
-      text-align: center;
-      margin-top: 20px;
-      color: #8b949e;
-      font-size: 14px;
-    }
-  </style>
+  .rank {
+    font-weight: bold;
+    color: #ffa657;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    color: #8b949e;
+    font-size: 14px;
+  }
+
+  /* Grade colors */
+  .grade-Aplus { background-color: #00c853; color: black; font-weight: bold; }
+  .grade-A { background-color: #66ff66; color: black; font-weight: bold; }
+  .grade-Aminus { background-color: #b0ff4d; color: black; font-weight: bold; }
+  .grade-Bplus { background-color: #d4ff4d; color: black; font-weight: bold; }
+  .grade-B { background-color: #ffff66; color: black; font-weight: bold; }
+  .grade-C { background-color: #ffb74d; color: black; font-weight: bold; }
+  .grade-D { background-color: #ff5252; color: black; font-weight: bold; }
+  .grade-F { background-color: #b71c1c; color: white; font-weight: bold; }
+</style>
 </head>
 <body>
-  <h1>📘 HSC Result Dashboard 2025</h1>
-  <input type="text" id="searchBox" placeholder="🔍 Search by roll or name..." onkeyup="filterTable()">
 
+<h1>📘 HSC Result Dashboard 2025</h1>
+<input type="text" id="searchBox" placeholder="🔍 Search by roll or name..." onkeyup="filterTable()">
+
+<div class="table-container">
   <table id="resultTable">
     <thead></thead>
     <tbody></tbody>
   </table>
+</div>
 
-  <div class="footer">Developed by Thamid | Auto-ranked by GPA</div>
+<div class="footer">Developed by Thamid | Auto-ranked by GPA | Color-coded grades</div>
 
-  <script>
-    async function loadCSV() {
-      try {
-        const response = await fetch('result.csv');
-        if (!response.ok) throw new Error('CSV file not found');
-        const csvText = await response.text();
-        const rows = csvText.trim().split('\n').map(r => r.split(','));
+<script>
+async function loadCSV() {
+  try {
+    const response = await fetch('result.csv');
+    if (!response.ok) throw new Error('CSV file not found');
+    const csvText = await response.text();
+    const rows = parseCSV(csvText.trim());
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
 
-        const headers = rows[0];
-        const data = rows.slice(1).map(r => {
-          const obj = {};
-          headers.forEach((h, i) => obj[h.trim()] = r[i]?.trim());
-          obj["GPA"] = parseFloat(obj["GPA"]) || 0;
-          return obj;
-        });
+    const cleanData = dataRows.map(r => {
+      const entry = {};
+      headers.forEach((h, i) => entry[h.trim()] = (r[i] || '').trim());
+      return entry;
+    });
 
-        // Sort by GPA descending
-        data.sort((a, b) => b.GPA - a.GPA);
-        data.forEach((row, i) => row["Rank"] = i + 1);
-
-        renderTable(headers, data);
-        window.resultData = data;
-      } catch (err) {
-        document.body.innerHTML += `<p style="color:red;text-align:center;">⚠️ Error loading CSV: ${err.message}</p>`;
+    // Detect subject pairs dynamically
+    const subjectPairs = [];
+    for (let i = 0; i < headers.length; i++) {
+      if (headers[i].toLowerCase().includes('subject_') && headers[i].toLowerCase().includes('name')) {
+        const gradeHeader = headers[i].replace('Name', 'Grade');
+        if (headers.includes(gradeHeader)) subjectPairs.push([headers[i], gradeHeader]);
       }
     }
 
-    function renderTable(headers, data) {
-      const tableHead = document.querySelector("#resultTable thead");
-      const tableBody = document.querySelector("#resultTable tbody");
+    // Replace subject headers with real subject names from first student row
+    const firstRow = cleanData[0] || {};
+    const renamedSubjects = subjectPairs.map(([nameField, gradeField]) => {
+      const realName = firstRow[nameField] || nameField.replace(/_/g, ' ');
+      return [realName.toUpperCase(), gradeField];
+    });
 
-      tableHead.innerHTML = `<tr><th>Rank</th>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
-      tableBody.innerHTML = data.map(row => `
-        <tr>
-          <td class="rank">${row.Rank}</td>
-          ${headers.map(h => `<td>${row[h] || ""}</td>`).join('')}
-        </tr>`).join('');
+    // Sort by GPA descending
+    cleanData.sort((a, b) => parseFloat(b["Grade Point Average"]) - parseFloat(a["Grade Point Average"]));
+    cleanData.forEach((row, i) => row["Rank"] = i + 1);
+
+    renderTable(cleanData, renamedSubjects);
+  } catch (err) {
+    document.body.innerHTML += `<p style="color:red;text-align:center;">⚠️ Error loading CSV: ${err.message}</p>`;
+  }
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cell = "", insideQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; continue; }
+    if (c === '"') { insideQuotes = !insideQuotes; continue; }
+    if (c === ',' && !insideQuotes) { row.push(cell); cell = ""; continue; }
+    if ((c === '\n' || c === '\r') && !insideQuotes) {
+      if (cell || row.length) { row.push(cell); rows.push(row); row = []; cell = ""; }
+      continue;
     }
+    cell += c;
+  }
+  if (cell || row.length) row.push(cell);
+  if (row.length) rows.push(row);
+  return rows;
+}
 
-    function filterTable() {
-      const term = document.getElementById('searchBox').value.toLowerCase();
-      const rows = document.querySelectorAll('#resultTable tbody tr');
-      rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(term) ? '' : 'none';
-      });
-    }
+function getGradeClass(grade) {
+  if (!grade) return '';
+  grade = grade.toUpperCase().trim();
+  if (grade === 'A+') return 'grade-Aplus';
+  if (grade === 'A') return 'grade-A';
+  if (grade === 'A-') return 'grade-Aminus';
+  if (grade === 'B+') return 'grade-Bplus';
+  if (grade === 'B') return 'grade-B';
+  if (grade === 'C') return 'grade-C';
+  if (grade === 'D') return 'grade-D';
+  if (grade === 'F' || grade === 'FAIL') return 'grade-F';
+  return '';
+}
 
-    loadCSV();
-  </script>
+function renderTable(data, subjects) {
+  const tableHead = document.querySelector("#resultTable thead");
+  const tableBody = document.querySelector("#resultTable tbody");
+
+  // Header row
+  let headerHTML = `
+    <tr>
+      <th>Rank</th>
+      <th>Student Name</th>
+      <th>Roll Number</th>
+      <th>GPA</th>
+      <th>Institution</th>
+      <th>Result</th>`;
+  subjects.forEach(([sName]) => { headerHTML += `<th>${sName}</th>`; });
+  headerHTML += `</tr>`;
+  tableHead.innerHTML = headerHTML;
+
+  // Data rows
+  tableBody.innerHTML = data.map(r => {
+    let rowHTML = `
+      <tr>
+        <td class="rank">${r.Rank}</td>
+        <td>${r["Student Name"]}</td>
+        <td>${r["Roll Number"]}</td>
+        <td>${r["Grade Point Average"]}</td>
+        <td>${r["Institution"]}</td>
+        <td>${r["Overall Result"]}</td>`;
+    subjects.forEach(([sName, sGrade]) => {
+      const grade = r[sGrade] || '';
+      rowHTML += `<td class="${getGradeClass(grade)}">${grade}</td>`;
+    });
+    rowHTML += `</tr>`;
+    return rowHTML;
+  }).join('');
+}
+
+function filterTable() {
+  const term = document.getElementById('searchBox').value.toLowerCase();
+  const rows = document.querySelectorAll('#resultTable tbody tr');
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(term) ? '' : 'none';
+  });
+}
+
+loadCSV();
+</script>
+
 </body>
 </html>
